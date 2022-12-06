@@ -1094,26 +1094,8 @@ void qrShowCodeln()
   tft.fillScreen(qrScreenBgColour);
 
   qrData.toUpperCase();
-  const char *qrDataChar = qrData.c_str();
-  QRCode qrcoded;
-  uint8_t qrcodeData[qrcode_getBufferSize(20)];
 
-  qrcode_initText(&qrcoded, qrcodeData, 11, 0, qrDataChar);
-
-  for (uint8_t y = 0; y < qrcoded.size; y++)
-  {
-    for (uint8_t x = 0; x < qrcoded.size; x++)
-    {
-      if (qrcode_getModule(&qrcoded, x, y))
-      {
-        tft.fillRect(65 + 2 * x, 5 + 2 * y, 2, 2, TFT_BLACK);
-      }
-      else
-      {
-        tft.fillRect(65 + 2 * x, 5 + 2 * y, 2, 2, qrScreenBgColour);
-      }
-    }
-  }
+  showQrCode();
 
   tft.setCursor(0, 220);
   tft.setTextSize(2);
@@ -1130,41 +1112,10 @@ void qrShowCodeOnchain(bool anAddress, String message)
     qrData.toUpperCase();
   }
 
-  const char *qrDataChar = qrData.c_str();
-  QRCode qrcoded;
-  uint8_t qrcodeData[qrcode_getBufferSize(20)];
-  int pixSize = 0;
+  showQrCode();
 
-  tft.setCursor(0, 100);
   tft.setTextSize(2);
   tft.setTextColor(TFT_BLACK, qrScreenBgColour);
-
-  if (anAddress)
-  {
-    qrcode_initText(&qrcoded, qrcodeData, 2, 0, qrDataChar);
-    pixSize = 4;
-  }
-  else
-  {
-    qrcode_initText(&qrcoded, qrcodeData, 4, 0, qrDataChar);
-    pixSize = 3;
-  }
-
-  for (uint8_t y = 0; y < qrcoded.size; y++)
-  {
-    for (uint8_t x = 0; x < qrcoded.size; x++)
-    {
-      if (qrcode_getModule(&qrcoded, x, y))
-      {
-        tft.fillRect(70 + pixSize * x, 5 + pixSize * y, pixSize, pixSize, TFT_BLACK);
-      }
-      else
-      {
-        tft.fillRect(70 + pixSize * x, 5 + pixSize * y, pixSize, pixSize, qrScreenBgColour);
-      }
-    }
-  }
-
   tft.setCursor(0, 120);
   tft.println(message);
 }
@@ -1174,25 +1125,8 @@ void qrShowCodeLNURL(String message)
   tft.fillScreen(qrScreenBgColour);
 
   qrData.toUpperCase();
-  const char *qrDataChar = qrData.c_str();
-  QRCode qrcoded;
-  uint8_t qrcodeData[qrcode_getBufferSize(20)];
-  qrcode_initText(&qrcoded, qrcodeData, 6, 0, qrDataChar);
 
-  for (uint8_t y = 0; y < qrcoded.size; y++)
-  {
-    for (uint8_t x = 0; x < qrcoded.size; x++)
-    {
-      if (qrcode_getModule(&qrcoded, x, y))
-      {
-        tft.fillRect(65 + 3 * x, 5 + 3 * y, 3, 3, TFT_BLACK);
-      }
-      else
-      {
-        tft.fillRect(65 + 3 * x, 5 + 3 * y, 3, 3, qrScreenBgColour);
-      }
-    }
-  }
+  showQrCode();
 
   tft.setCursor(0, 220);
   tft.setTextSize(2);
@@ -1903,4 +1837,133 @@ void printSleepAnimationFrame(String text, int wait) {
   //tft.setFreeFont(BIGFONT);
   tft.println(text);
   delay(wait);
+}
+
+
+/**
+ * @brief Get the size of the qr code to produce
+ * 
+ * @param qrData 
+ * @return int 
+ */
+int getQrCodeVersion() {
+  int qrVersion = 0;
+  int stringLength = qrData.length();
+
+  // Using this chart with ECC_LOW https://github.com/ricmoo/QRCode#data-capacities
+  if(stringLength <= 25) {
+    qrVersion = 1;
+  }  
+  else if(stringLength <= 47) {
+    qrVersion = 2;
+  }
+  else if(stringLength <= 77) {
+    qrVersion = 3;
+  }
+  else if(stringLength <= 114) {
+    qrVersion = 4;
+  }
+  else if(stringLength <= 154) {
+    qrVersion = 5;
+  }
+  else if(stringLength <= 195) {
+    qrVersion = 6;
+  }
+  else if(stringLength <= 367) {
+    qrVersion = 11;
+  }
+  else {
+    qrVersion = 28;
+  }
+
+  return qrVersion;
+}
+
+
+/**
+ * @brief Get the Qr Code Pixel Size object
+ * 
+ * @param qrCodeVersion The QR code version that is being used
+ * @return int The size of the QR code pixels
+ */
+int getQrCodePixelSize(int qrCodeVersion) {
+  int qrDisplayHeight = tft.height() - 20; // qr code height in pixels
+  // Using https://github.com/ricmoo/QRCode#data-capacities
+
+  // Get the QR code size (blocks not pixels)
+  int qrCodeHeight = 0;
+  switch(qrCodeVersion) {
+    case 1:
+      qrCodeHeight = 21;
+      break;
+    case 2:
+      qrCodeHeight = 25;
+      break;
+    case 3:
+      qrCodeHeight = 29;
+      break;
+    case 4:
+      qrCodeHeight = 33;
+      break;
+    case 5:
+      qrCodeHeight = 37;
+      break;
+    case 6:
+      qrCodeHeight = 41;
+      break;
+    case 7:
+      qrCodeHeight = 45;
+      break;
+    case 8:
+      qrCodeHeight = 49;
+      break;
+    case 9:
+      qrCodeHeight = 53;
+      break;
+    case 10:
+      qrCodeHeight = 57;
+      break;
+    case 11:
+      qrCodeHeight = 61;
+      break;
+    default:
+      qrCodeHeight = 129;
+      break;
+  }
+  int pixelHeight = floor(qrDisplayHeight / qrCodeHeight);
+  // Serial.println(F("qrCodeHeight pixel height is"));
+  // Serial.println(qrCodeHeight);
+
+  // Serial.println(F("Calced pixel height is"));
+  // Serial.println(pixelHeight);
+  return pixelHeight;
+}
+
+void showQrCode() {
+  const char *qrDataChar = qrData.c_str();
+  QRCode qrcoded;
+
+  int qrVersion = getQrCodeVersion();
+  int pixSize = getQrCodePixelSize(qrVersion);
+  uint8_t qrcodeData[qrcode_getBufferSize(20)];
+  uint16_t qrWidth = pixSize * qrcoded.size;
+  uint16_t qrPosX = (tft.width() - qrWidth) / 2;
+  uint16_t qrPosY = (tft.height() - qrWidth) / 2;
+
+  qrcode_initText(&qrcoded, qrcodeData, qrVersion, 0, qrDataChar);
+
+  for (uint8_t y = 0; y < qrcoded.size; y++)
+  {
+    for (uint8_t x = 0; x < qrcoded.size; x++)
+    {
+      if (qrcode_getModule(&qrcoded, x, y))
+      {
+        tft.fillRect(qrPosX + pixSize * x, qrPosY +  pixSize * y, pixSize, pixSize, TFT_BLACK);
+      }
+      else
+      {
+        tft.fillRect(qrPosX + pixSize * x, qrPosY +  pixSize * y, pixSize, pixSize, qrScreenBgColour);
+      }
+    }
+  }
 }
