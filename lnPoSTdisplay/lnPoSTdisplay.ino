@@ -1869,7 +1869,19 @@ int getQrCodeVersion() {
   else if(stringLength <= 195) {
     qrVersion = 6;
   }
-  else if(stringLength <= 367) {
+  else if(stringLength <= 224) {
+    qrVersion = 7;
+  }
+  else if(stringLength <= 279) {
+    qrVersion = 8;
+  }
+  else if(stringLength <= 335) {
+    qrVersion = 9;
+  }
+  else if(stringLength <= 395) {
+    qrVersion = 10;
+  }
+  else if(stringLength <= 468) {
     qrVersion = 11;
   }
   else {
@@ -1946,11 +1958,11 @@ void showQrCode() {
   int qrVersion = getQrCodeVersion();
   int pixSize = getQrCodePixelSize(qrVersion);
   uint8_t qrcodeData[qrcode_getBufferSize(20)];
+  qrcode_initText(&qrcoded, qrcodeData, qrVersion, 0, qrDataChar);
+  
   uint16_t qrWidth = pixSize * qrcoded.size;
   uint16_t qrPosX = (tft.width() - qrWidth) / 2;
   uint16_t qrPosY = (tft.height() - qrWidth) / 2;
-
-  qrcode_initText(&qrcoded, qrcodeData, qrVersion, 0, qrDataChar);
 
   for (uint8_t y = 0; y < qrcoded.size; y++)
   {
